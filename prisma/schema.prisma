@@ -1,0 +1,164 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ProviderType {
+  OPENAI
+  CLAUDE
+  GEMINI
+}
+
+enum PlanName {
+  FREE
+  PREMIUM
+}
+
+enum SubStatus {
+  ACTIVE
+  CANCELED
+  EXPIRED
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+model Role {
+  id    Int    @id @default(autoincrement())
+  name  String @unique // USER, ADMIN
+  users User[]
+}
+
+model User {
+  id              String   @id @default(uuid())
+  email           String   @unique
+  passwordHash    String
+  name            String
+  isEmailVerified Boolean  @default(false)
+  roleId          Int
+  role            Role     @relation(fields: [roleId], references: [id])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  sessions      Session[]
+  subscriptions Subscription[]
+  providers     AiProvider[]
+  conversations Conversation[]
+  searches      WebSearch[]
+  usageLogs     ApiUsageLog[]
+}
+
+model Session {
+  id               String    @id @default(uuid())
+  userId           String
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshTokenHash String
+  userAgent        String?
+  ip               String?
+  expiresAt        DateTime
+  revokedAt        DateTime?
+  createdAt        DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model Plan {
+  id                Int            @id @default(autoincrement())
+  name              PlanName       @unique
+  dailyRequestLimit Int
+  price             Decimal        @default(0)
+  subscriptions     Subscription[]
+}
+
+model Subscription {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planId    Int
+  plan      Plan      @relation(fields: [planId], references: [id])
+  status    SubStatus @default(ACTIVE)
+  startedAt DateTime  @default(now())
+  endsAt    DateTime?
+
+  @@index([userId, status])
+}
+
+model AiProvider {
+  id              String       @id @default(uuid())
+  userId          String? // null = system provider (admin manage kore)
+  user            User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type            ProviderType
+  name            String
+  model           String
+  encryptedApiKey String
+  isEnabled       Boolean      @default(true)
+  isDefault       Boolean      @default(false)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  conversations Conversation[]
+  usageLogs     ApiUsageLog[]
+}
+
+model Conversation {
+  id         String      @id @default(uuid())
+  userId     String
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  providerId String?
+  provider   AiProvider? @relation(fields: [providerId], references: [id], onDelete: SetNull)
+  title      String
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  messages   Message[]
+
+  @@index([userId])
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           MessageRole
+  content        String
+  tokens         Int?
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId])
+}
+
+model WebSearch {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  query       String
+  resultJson  Json
+  cachedUntil DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([userId, createdAt])
+  @@index([query])
+}
+
+model ApiUsageLog {
+  id         String      @id @default(uuid())
+  userId     String?
+  user       User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  providerId String?
+  provider   AiProvider? @relation(fields: [providerId], references: [id], onDelete: SetNull)
+  endpoint   String
+  method     String
+  statusCode Int
+  tokensUsed Int         @default(0)
+  latencyMs  Int
+  createdAt  DateTime    @default(now())
+
+  @@index([userId, createdAt])
+  @@index([createdAt])
+}

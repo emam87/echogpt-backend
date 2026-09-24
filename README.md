@@ -21,9 +21,14 @@
   <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
   [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
-## Description
-
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+
+## Authentication & Session Management
+
+- **Access Token**: Stateless JWT with a 15-minute expiration time (`JWT_ACCESS_EXPIRES`). Note: Since access tokens are stateless, an issued access token remains valid until its 15-minute expiration window expires naturally.
+- **Refresh Token**: Stateful session-backed JWT with a 7-day expiration time (`JWT_REFRESH_EXPIRES`). Refresh tokens are hashed (`argon2`) and stored in the `Session` database table.
+- **Logout Strategy**: When a user logs out (`POST /api/v1/auth/logout`), the corresponding session row in the database is updated with `revokedAt = new Date()`. This immediately invalidates the refresh token and prevents any subsequent token rotation or re-authentication.
+
 
 ## Project setup
 

@@ -163,7 +163,22 @@ export class UsersService {
         'Password updated successfully. All active sessions have been revoked.',
     };
   }
+
+  async deleteUser(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    await this.prisma.user.delete({
+      where: { id: userId },
+    });
+  }
 }
+
 
 
 

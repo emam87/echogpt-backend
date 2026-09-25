@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Patch } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Patch } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../common/decorators';
 import { UpdatePasswordDto, UpdateUserDto } from './dto';
@@ -50,6 +50,19 @@ export class UsersController {
   ) {
     return this.usersService.updatePassword(userId, updatePasswordDto);
   }
+
+  @Delete('me')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Delete current user account' })
+  @ApiResponse({
+    status: 204,
+    description: 'User account deleted successfully.',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  async deleteAccount(@CurrentUser('id') userId: string) {
+    await this.usersService.deleteUser(userId);
+  }
 }
+
 
 

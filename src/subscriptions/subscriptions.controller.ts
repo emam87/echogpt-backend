@@ -37,5 +37,23 @@ export class SubscriptionsController {
   async upgrade(@CurrentUser('id') userId: string) {
     return this.subscriptionsService.upgrade(userId);
   }
+
+  @Post('downgrade')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Downgrade subscription to FREE plan' })
+  @ApiResponse({
+    status: 200,
+    description: 'Subscription downgraded to FREE successfully.',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 404, description: 'Active subscription not found.' })
+  @ApiResponse({
+    status: 409,
+    description: 'User is already on FREE plan.',
+  })
+  async downgrade(@CurrentUser('id') userId: string) {
+    return this.subscriptionsService.downgrade(userId);
+  }
 }
+
 

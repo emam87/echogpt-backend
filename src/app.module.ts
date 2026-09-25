@@ -6,6 +6,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
+import { CryptoModule } from './common/crypto/crypto.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { UsageModule } from './usage/usage.module';
@@ -21,6 +22,7 @@ import { UsersModule } from './users/users.module';
       },
     ]),
     PrismaModule,
+    CryptoModule,
     AuthModule,
     UsersModule,
     SubscriptionsModule,

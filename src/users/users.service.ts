@@ -1,6 +1,12 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
+import * as argon2 from 'argon2';
 import { PrismaService } from '../prisma/prisma.service';
-import { UpdateUserDto } from './dto';
+import { UpdatePasswordDto, UpdateUserDto } from './dto';
 
 @Injectable()
 export class UsersService {
@@ -115,6 +121,49 @@ export class UsersService {
 
     return this.getProfile(userId);
   }
+
+  async updatePassword(userId: string, updatePasswordDto: UpdatePasswordDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { passwordHash: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const isPasswordValid = await argon2.verify(
+      user.passwordHash,
+      updatePasswordDto.currentPassword,
+    );
+
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid current password');
+    }
+
+    const newPasswordHash = await argon2.hash(updatePasswordDto.newPassword);
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash: newPasswordHash },
+    });
+
+    await this.prisma.session.updateMany({
+      where: {
+        userId,
+        revokedAt: null,
+      },
+      data: {
+        revokedAt: new Date(),
+      },
+    });
+
+    return {
+      message:
+        'Password updated successfully. All active sessions have been revoked.',
+    };
+  }
 }
+
 
 

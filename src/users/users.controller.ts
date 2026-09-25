@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Patch } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../common/decorators';
-import { UpdateUserDto } from './dto';
+import { UpdatePasswordDto, UpdateUserDto } from './dto';
 import { UsersService } from './users.service';
 
 @ApiTags('Users')
@@ -30,5 +30,26 @@ export class UsersController {
   ) {
     return this.usersService.updateProfile(userId, updateUserDto);
   }
+
+  @Patch('me/password')
+  @ApiOperation({
+    summary: 'Change current user password and revoke all sessions',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Password updated successfully and all active sessions revoked.',
+  })
+  @ApiResponse({ status: 400, description: 'Bad Request.' })
+  @ApiResponse({
+    status: 401,
+    description: 'Invalid current password or unauthorized.',
+  })
+  async updatePassword(
+    @CurrentUser('id') userId: string,
+    @Body() updatePasswordDto: UpdatePasswordDto,
+  ) {
+    return this.usersService.updatePassword(userId, updatePasswordDto);
+  }
 }
+
 

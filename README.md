@@ -25,9 +25,14 @@
 
 ## Authentication & Session Management
 
-- **Access Token**: Stateless JWT with a 15-minute expiration time (`JWT_ACCESS_EXPIRES`). Note: Since access tokens are stateless, an issued access token remains valid until its 15-minute expiration window expires naturally.
+- **Access Token**: Stateful-verified JWT with a 15-minute expiration time (`JWT_ACCESS_EXPIRES`). Access tokens include session ID (`sid`) and every authenticated request checks session status in `JwtStrategy`.
 - **Refresh Token**: Stateful session-backed JWT with a 7-day expiration time (`JWT_REFRESH_EXPIRES`). Refresh tokens are hashed (`argon2`) and stored in the `Session` database table.
-- **Logout Strategy**: When a user logs out (`POST /api/v1/auth/logout`), the corresponding session row in the database is updated with `revokedAt = new Date()`. This immediately invalidates the refresh token and prevents any subsequent token rotation or re-authentication.
+- **Logout Strategy**: When a user logs out (`POST /api/v1/auth/logout`), the corresponding session row in the database is updated with `revokedAt = new Date()`. This immediately revokes session validity for both access token requests and refresh token rotations.
+
+## Assumptions
+- Subscriptions are mocked — no real payment gateway. Upgrade/downgrade directly switches the active plan via a Prisma transaction (old subscription CANCELED, new one created ACTIVE).
+- Password change revokes all active sessions for that user (all devices must log in again). Session validity (revokedAt, expiresAt) is checked on every authenticated request in JwtStrategy, not just JWT signature.
+- Usage limit counts successful (statusCode < 400) requests to /chat and /search endpoints only, reset daily at UTC midnight.
 
 
 ## Project setup

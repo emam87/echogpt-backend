@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../common/decorators';
 import { SubscriptionsService } from './subscriptions.service';
@@ -20,4 +20,22 @@ export class SubscriptionsController {
   async getStatus(@CurrentUser('id') userId: string) {
     return this.subscriptionsService.getStatus(userId);
   }
+
+  @Post('upgrade')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Upgrade subscription to PREMIUM plan' })
+  @ApiResponse({
+    status: 200,
+    description: 'Subscription upgraded to PREMIUM successfully.',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 404, description: 'Active subscription not found.' })
+  @ApiResponse({
+    status: 409,
+    description: 'User is already on PREMIUM plan.',
+  })
+  async upgrade(@CurrentUser('id') userId: string) {
+    return this.subscriptionsService.upgrade(userId);
+  }
 }
+

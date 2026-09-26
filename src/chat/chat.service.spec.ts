@@ -89,6 +89,7 @@ describe('ChatService', () => {
     }).compile();
 
     service = module.get<ChatService>(ChatService);
+    process.env.MOCK_AI_RESPONSE = 'false';
     jest.clearAllMocks();
   });
 
@@ -169,6 +170,25 @@ describe('ChatService', () => {
         reply: 'AI Assistant response',
         tokensUsed: 25,
       });
+    });
+
+    it('should return mock response if MOCK_AI_RESPONSE=true without calling adapter', async () => {
+      const origEnv = process.env.MOCK_AI_RESPONSE;
+      process.env.MOCK_AI_RESPONSE = 'true';
+
+      mockUsageService.assertWithinLimit.mockResolvedValue(undefined);
+      mockPrismaService.aiProvider.findFirst.mockResolvedValue(mockProvider);
+      mockPrismaService.conversation.create.mockResolvedValue(mockConversation);
+      mockPrismaService.message.create.mockResolvedValue({});
+      mockPrismaService.apiUsageLog.create.mockResolvedValue({});
+
+      const result = await service.sendMessage(userId, { message: 'Mock test' });
+
+      expect(mockAdapter.chat).not.toHaveBeenCalled();
+      expect(result.reply).toBe('This is a mock response from EchoGPT AI');
+      expect(result.tokensUsed).toBe(10);
+
+      process.env.MOCK_AI_RESPONSE = origEnv;
     });
 
     it('should append user message to existing conversation history', async () => {

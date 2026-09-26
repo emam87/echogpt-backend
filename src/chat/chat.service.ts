@@ -108,13 +108,16 @@ export class ChatService {
 
     const adapter = this.aiProviderFactory.getAdapter(provider.type);
     const startTime = Date.now();
+    const isMock = process.env.MOCK_AI_RESPONSE === 'true';
 
     try {
-      const chatResponse = await adapter.chat(
-        promptMessages,
-        rawApiKey,
-        provider.model,
-      );
+      const chatResponse = isMock
+        ? { content: 'This is a mock response from EchoGPT AI', tokensUsed: 10 }
+        : await adapter.chat(
+            promptMessages,
+            rawApiKey,
+            provider.model,
+          );
       const latencyMs = Date.now() - startTime;
       const tokensUsed = chatResponse.tokensUsed ?? 0;
 

@@ -13,6 +13,7 @@ import { UsageModule } from './usage/usage.module';
 import { UsersModule } from './users/users.module';
 import { ProvidersModule } from './providers/providers.module';
 import { ChatModule } from './chat/chat.module';
+import { SearchModule } from './search/search.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { ChatModule } from './chat/chat.module';
     UsageModule,
     ProvidersModule,
     ChatModule,
+    SearchModule,
   ],
   controllers: [AppController],
   providers: [

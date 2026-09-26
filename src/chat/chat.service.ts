@@ -148,6 +148,7 @@ export class ChatService {
         tokensUsed,
       };
     } catch (error: any) {
+      console.error('[ChatService] Provider call error:', error.message || error);
       const latencyMs = Date.now() - startTime;
       const statusCode = error.statusCode || error.status || 502;
 

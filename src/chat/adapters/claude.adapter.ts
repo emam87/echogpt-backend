@@ -52,8 +52,13 @@ export class ClaudeAdapter implements AiProviderAdapter {
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error(
+          `[ClaudeAdapter] Error (${response.status} ${response.statusText}):`,
+          errorText,
+        );
         throw new ProviderApiException(
-          `Claude API error: ${response.statusText}`,
+          `Claude API error (${response.status}): ${errorText}`,
           response.status,
         );
       }

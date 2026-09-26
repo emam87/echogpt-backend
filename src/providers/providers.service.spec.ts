@@ -1,6 +1,7 @@
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ProviderType } from '@prisma/client';
+import { AiProviderFactory } from '../chat/factories/ai-provider.factory';
 import { CryptoService } from '../common/crypto/crypto.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ProvidersService } from './providers.service';
@@ -9,6 +10,8 @@ describe('ProvidersService', () => {
   let service: ProvidersService;
   let mockPrismaService: any;
   let mockCryptoService: any;
+  let mockAiProviderFactory: any;
+  let mockAdapter: any;
 
   const user = { id: 'user-1', role: { name: 'USER' } };
   const adminUser = { id: 'admin-1', role: { name: 'ADMIN' } };
@@ -58,11 +61,20 @@ describe('ProvidersService', () => {
       decrypt: jest.fn((text: string) => text.replace('encrypted_', '')),
     };
 
+    mockAdapter = {
+      healthCheck: jest.fn(),
+    };
+
+    mockAiProviderFactory = {
+      getAdapter: jest.fn().mockReturnValue(mockAdapter),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ProvidersService,
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: CryptoService, useValue: mockCryptoService },
+        { provide: AiProviderFactory, useValue: mockAiProviderFactory },
       ],
     }).compile();
 
@@ -285,73 +297,45 @@ describe('ProvidersService', () => {
   });
 
   describe('checkHealth', () => {
-    it('should return healthy: true if external API call succeeds', async () => {
+    it('should return healthy: true if adapter.healthCheck succeeds', async () => {
       mockPrismaService.aiProvider.findUnique.mockResolvedValue(mockProvider);
-
-      const fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValue({
-        ok: true,
-        status: 200,
-      } as Response);
+      mockAdapter.healthCheck.mockResolvedValue(true);
 
       const result = await service.checkHealth(user, 'prov-1');
 
-      expect(fetchSpy).toHaveBeenCalledWith(
-        'https://api.openai.com/v1/models',
-        expect.objectContaining({
-          method: 'GET',
-          headers: expect.objectContaining({
-            Authorization: 'Bearer sk-1234567890abcd',
-          }),
-        }),
-      );
+      expect(mockAiProviderFactory.getAdapter).toHaveBeenCalledWith(ProviderType.OPENAI);
+      expect(mockAdapter.healthCheck).toHaveBeenCalledWith('sk-1234567890abcd');
       expect(result.healthy).toBe(true);
       expect(result.checkedAt).toBeDefined();
-
-      fetchSpy.mockRestore();
     });
 
-    it('should return healthy: false if external API returns error status without crashing or throwing', async () => {
+    it('should return healthy: false if adapter.healthCheck returns false', async () => {
       mockPrismaService.aiProvider.findUnique.mockResolvedValue(mockProvider);
-
-      const fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValue({
-        ok: false,
-        status: 401,
-      } as Response);
+      mockAdapter.healthCheck.mockResolvedValue(false);
 
       const result = await service.checkHealth(user, 'prov-1');
 
       expect(result.healthy).toBe(false);
       expect(result.checkedAt).toBeDefined();
-
-      fetchSpy.mockRestore();
     });
 
-    it('should return healthy: false if fetch throws network error without crashing request', async () => {
+    it('should return healthy: false if adapter.healthCheck throws error without crashing request', async () => {
       mockPrismaService.aiProvider.findUnique.mockResolvedValue(mockProvider);
-
-      const fetchSpy = jest.spyOn(global, 'fetch').mockRejectedValue(new Error('Network error'));
+      mockAdapter.healthCheck.mockRejectedValue(new Error('Network error'));
 
       const result = await service.checkHealth(user, 'prov-1');
 
       expect(result.healthy).toBe(false);
       expect(result.checkedAt).toBeDefined();
-
-      fetchSpy.mockRestore();
     });
 
     it('should allow user to check health of system provider (userId = null)', async () => {
       mockPrismaService.aiProvider.findUnique.mockResolvedValue(mockSystemProvider);
-
-      const fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValue({
-        ok: true,
-        status: 200,
-      } as Response);
+      mockAdapter.healthCheck.mockResolvedValue(true);
 
       const result = await service.checkHealth(user, 'sys-prov-1');
 
       expect(result.healthy).toBe(true);
-
-      fetchSpy.mockRestore();
     });
 
     it('should throw NotFoundException if user tries to check health of another user provider', async () => {

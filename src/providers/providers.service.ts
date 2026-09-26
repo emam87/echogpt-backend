@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { AiProvider, ProviderType } from '@prisma/client';
+import { AiProviderFactory } from '../chat/factories/ai-provider.factory';
 import { CryptoService } from '../common/crypto/crypto.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProviderDto, UpdateProviderDto } from './dto';
@@ -14,6 +15,7 @@ export class ProvidersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly cryptoService: CryptoService,
+    private readonly aiProviderFactory: AiProviderFactory,
   ) {}
 
   private isAdmin(user: any): boolean {
@@ -205,7 +207,8 @@ export class ProvidersService {
     try {
       const rawApiKey = this.cryptoService.decrypt(provider.encryptedApiKey);
       if (rawApiKey) {
-        healthy = await this.pingProviderApi(provider.type, rawApiKey);
+        const adapter = this.aiProviderFactory.getAdapter(provider.type);
+        healthy = await adapter.healthCheck(rawApiKey);
       }
     } catch {
       healthy = false;
@@ -215,45 +218,5 @@ export class ProvidersService {
       healthy,
       checkedAt: new Date().toISOString(),
     };
-  }
-
-  private async pingProviderApi(
-    type: ProviderType,
-    apiKey: string,
-  ): Promise<boolean> {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-    try {
-      let url = '';
-      const headers: Record<string, string> = {
-        'User-Agent': 'EchoGPT-Backend-HealthCheck',
-      };
-
-      if (type === ProviderType.OPENAI) {
-        url = 'https://api.openai.com/v1/models';
-        headers['Authorization'] = `Bearer ${apiKey}`;
-      } else if (type === ProviderType.CLAUDE) {
-        url = 'https://api.anthropic.com/v1/models';
-        headers['x-api-key'] = apiKey;
-        headers['anthropic-version'] = '2023-06-01';
-      } else if (type === ProviderType.GEMINI) {
-        url = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
-      } else {
-        return false;
-      }
-
-      const response = await fetch(url, {
-        method: 'GET',
-        headers,
-        signal: controller.signal,
-      });
-
-      return response.ok;
-    } catch {
-      return false;
-    } finally {
-      clearTimeout(timeoutId);
-    }
   }
 }

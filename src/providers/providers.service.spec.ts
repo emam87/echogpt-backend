@@ -94,7 +94,7 @@ describe('ProvidersService', () => {
         },
       });
 
-      expect(result.apiKey).toBe('sk-****abcd');
+      expect(result.apiKey).toBe('****abcd');
       expect(result).not.toHaveProperty('encryptedApiKey');
     });
 
@@ -116,7 +116,7 @@ describe('ProvidersService', () => {
         }),
       });
 
-      expect(result.apiKey).toBe('sk-****1234');
+      expect(result.apiKey).toBe('****1234');
     });
 
     it('should throw ForbiddenException if regular user attempts to create system provider', async () => {
@@ -172,8 +172,8 @@ describe('ProvidersService', () => {
       });
 
       expect(results).toHaveLength(2);
-      expect(results[0].apiKey).toBe('sk-****abcd');
-      expect(results[1].apiKey).toBe('sk-****1234');
+      expect(results[0].apiKey).toBe('****abcd');
+      expect(results[1].apiKey).toBe('****1234');
     });
   });
 
@@ -199,7 +199,7 @@ describe('ProvidersService', () => {
           encryptedApiKey: 'encrypted_sk-newkey1234',
         },
       });
-      expect(result.apiKey).toBe('sk-****1234');
+      expect(result.apiKey).toBe('****1234');
     });
 
     it('should throw NotFoundException if provider not found or owned by another user', async () => {

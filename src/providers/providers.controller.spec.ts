@@ -39,7 +39,7 @@ describe('ProvidersController', () => {
       model: 'gpt-4o',
       apiKey: 'sk-1234567890abcd',
     };
-    const expected = { id: 'p1', ...dto, apiKey: 'sk-****abcd' };
+    const expected = { id: 'p1', ...dto, apiKey: '****abcd' };
     mockProvidersService.create.mockResolvedValue(expected);
 
     const result = await controller.create(user, dto);

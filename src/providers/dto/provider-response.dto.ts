@@ -17,7 +17,7 @@ export class ProviderResponseDto {
   @ApiProperty({ example: 'gpt-4o' })
   model: string;
 
-  @ApiProperty({ example: 'sk-****abcd', description: 'Masked API key (last 4 characters)' })
+  @ApiProperty({ example: '****abcd', description: 'Masked API key (last 4 characters)' })
   apiKey: string;
 
   @ApiProperty({ example: true })

@@ -1,124 +1,167 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# EchoGPT Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+EchoGPT Backend is a production-grade NestJS REST API powered by PostgreSQL, Prisma ORM, and Swagger/OpenAPI documentation. Designed as the backend service for the EchoGPT Chrome Extension, it delivers secure multi-tenant AI provider integration (OpenAI, Claude, Gemini), stateful JWT session management, subscription tier control, cached web search capabilities, and a full-featured Admin dashboard.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+---
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Tech Stack
 
-## Authentication & Session Management
+- **Framework**: [NestJS](https://nestjs.com/) (TypeScript)
+- **Database & ORM**: PostgreSQL & [Prisma ORM](https://www.prisma.io/)
+- **Security & Cryptography**: Passport JWT, Argon2 (Password hashing), AES-256-GCM (API Key encryption)
+- **Rate Limiting & Protection**: `@nestjs/throttler`
+- **Documentation**: Swagger / OpenAPI 3.0 (`@nestjs/swagger`)
+- **Testing**: Jest
+- **Containerization**: Docker & Docker Compose
 
-- **Access Token**: Stateful-verified JWT with a 15-minute expiration time (`JWT_ACCESS_EXPIRES`). Access tokens include session ID (`sid`) and every authenticated request checks session status in `JwtStrategy`.
-- **Refresh Token**: Stateful session-backed JWT with a 7-day expiration time (`JWT_REFRESH_EXPIRES`). Refresh tokens are hashed (`argon2`) and stored in the `Session` database table.
-- **Logout Strategy**: When a user logs out (`POST /api/v1/auth/logout`), the corresponding session row in the database is updated with `revokedAt = new Date()`. This immediately revokes session validity for both access token requests and refresh token rotations.
+---
 
-## Assumptions
-- Subscriptions are mocked — no real payment gateway. Upgrade/downgrade directly switches the active plan via a Prisma transaction (old subscription CANCELED, new one created ACTIVE).
-- Password change revokes all active sessions for that user (all devices must log in again). Session validity (revokedAt, expiresAt) is checked on every authenticated request in JwtStrategy, not just JWT signature.
-- Usage limit counts successful (statusCode < 400) requests to /chat and /search endpoints only, reset daily at UTC midnight.
+## Setup Instructions
 
+### 1. Prerequisites
+Ensure you have Node.js (v18+), npm, and Docker installed.
 
-## Project setup
-
+### 2. Clone and Install Dependencies
 ```bash
-$ npm install
+git clone <repository-url>
+cd echogpt-backend
+npm install
 ```
 
-## Compile and run the project
-
+### 3. Start Database Service
+Spin up the local PostgreSQL container using Docker Compose:
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+docker compose up -d
 ```
 
-## Run tests
-
+### 4. Environment Configuration
+Copy the template environment file:
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+cp .env.example .env
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
+Generate secure 32-byte (64 hex characters) keys for `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, and `ENCRYPTION_KEY` by running the following command in your terminal:
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+Update your `.env` file with these generated values.
+
+### 5. Database Migration & Seeding
+Run Prisma migrations to construct the database schema and execute the seed script:
+```bash
+npx prisma migrate dev
+npx prisma db seed
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### 6. Start Development Server
+```bash
+npm run start:dev
+```
+The server will start at `http://localhost:3000`.
 
-## Observability
+---
 
-In production applications, observability is essential for understanding how your system behaves, detecting issues early, and maintaining reliable performance.
+## Environment Variables Table
 
-[NestJS Observe](https://observe.nestjs.com) automatically instruments your NestJS application, giving you deep visibility into your system with minimal setup:
+| Variable | Required | Description | Example |
+| :--- | :---: | :--- | :--- |
+| `PORT` | Yes | HTTP server port | `3000` |
+| `DATABASE_URL` | Yes | PostgreSQL connection string | `postgresql://echogpt:echogpt@localhost:5433/echogpt?schema=public` |
+| `JWT_ACCESS_SECRET` | Yes | Secret key for signing access JWTs | `64-character hex string` |
+| `JWT_REFRESH_SECRET`| Yes | Secret key for signing refresh JWTs | `64-character hex string` |
+| `JWT_ACCESS_EXPIRES` | Yes | Expiration duration for access tokens | `15m` |
+| `JWT_REFRESH_EXPIRES`| Yes | Expiration duration for refresh tokens | `7d` |
+| `ENCRYPTION_KEY` | Yes | 64-character hex key (32 bytes) for AES-256-GCM encryption of provider keys | `64-character hex string` |
+| `MOCK_AI_RESPONSE` | No | Set to `true` to return mock responses without calling real LLM APIs (default: `true`) | `true` |
+| `MOCK_SEARCH` | No | Set to `true` to return mock search results without paid search API keys (default: `true`) | `true` |
 
-- **Distributed tracing:** Follow requests across services and understand how they flow through your system.
-- **Waterfall analysis:** Visualize request execution and identify slow operations, bottlenecks, and unexpected delays.
-- **Performance analysis:** Analyze application performance in real time and quickly pinpoint areas that need optimization.
-- **Metrics:** Track key application and infrastructure metrics to understand system health and performance trends.
-- **Logging:** Centralize and correlate logs with traces and other telemetry to make debugging easier.
-- **Error tracking:** Detect errors quickly and investigate their root causes with the surrounding context.
-- **SLA monitoring:** Track service-level objectives and identify when your application is approaching or exceeding defined thresholds.
-- **Alarms and alerts:** Set up alerts for critical errors, performance degradation, SLA violations, and other anomalies so your team can react quickly.
+---
 
-## Resources
+## API Documentation
 
-Check out a few resources that may come in handy when working with NestJS:
+Interactive Swagger documentation is available once the server is running:
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Auto-instrument your application with [NestJS Observer](https://observer.nestjs.com). Distributed tracing, metrics, and logging made easy. Error tracking and performance monitoring for your NestJS applications.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+- **Swagger UI**: [http://localhost:3000/docs](http://localhost:3000/docs)
 
-## Support
+All endpoints requiring authentication include `@ApiBearerAuth()` in Swagger and expect a valid Bearer token in the `Authorization` header.
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+---
 
-## Stay in touch
+## Default Seeded Accounts
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+The database seed populates initial role definitions (`USER`, `ADMIN`), plan tiers (`FREE`, `PREMIUM`), and demo accounts:
 
-## License
+| Email | Password | Role | Purpose |
+| :--- | :--- | :--- | :--- |
+| `admin@echogpt.com` | `Admin123!` | `ADMIN` | Full access to `/admin/*` management endpoints |
+| `user@echogpt.com` | `User123!` | `USER` | Standard user testing |
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+> [!CAUTION]
+> Default seeded credentials are provided solely for development and evaluation. They must be updated or removed before deploying to production environments.
+
+---
+
+## Testing Notes & Mocking Flags
+
+Due to external API costs during development, two environment flags are provided:
+
+- `MOCK_AI_RESPONSE=true`: Bypasses external HTTP calls to OpenAI, Claude, or Gemini APIs while executing the complete request lifecycle—including usage limit validation (`assertWithinLimit`), active provider selection, conversation loading, message persistence, and `ApiUsageLog` creation.
+- `MOCK_SEARCH=true`: Bypasses external search engine API calls while caching results in the `WebSearch` database table and generating usage logs.
+
+To test live external AI providers, configure a valid provider API key via `POST /api/v1/providers` and set `MOCK_AI_RESPONSE=false` in `.env`.
+
+---
+
+## Architectural Assumptions
+
+1. **Mocked Subscriptions**: Plan upgrades and downgrades switch active subscription records within a Prisma transaction (`CANCELED` for prior active record, `ACTIVE` for new record) without integrating a real payment processor.
+2. **Stateful Session Revocation**: Every access token contains a session ID (`sid`). `JwtStrategy` validates against the `Session` database record on every request. Logout and password changes immediately revoke sessions (`revokedAt = new Date()`), invalidating all outstanding access and refresh tokens.
+3. **Provider Ownership**: System providers (`userId = null`) created by administrators are accessible to all users. Custom user providers (`userId = user.id`) are strictly private to their owner.
+4. **Usage Limit Tracking**: Daily limit checks apply exclusively to successful (`statusCode < 400`) requests made to `/chat` and `/search` endpoints and automatically reset at UTC midnight.
+
+---
+
+## Known Trade-offs
+
+- **Transient Key Decryption**: When listing AI providers (`GET /providers` or `GET /admin/providers`), masked keys (`****1234`) are generated dynamically by transiently decrypting `encryptedApiKey` via `CryptoService` rather than persisting an additional `keyLastFour` database column. This minimizes schema complexity while maintaining key confidentiality.
+
+---
+
+## Security Note
+
+- In a previous commit, a hardcoded fallback encryption key was temporarily present in `prisma/seed.ts`. This was completely removed, and all environment secrets (`.env`) were rotated as a precaution.
+
+---
+
+## Running Tests
+
+Execute the Jest test suite:
+
+```bash
+# Run all unit tests
+npm run test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Generate coverage report
+npm run test:cov
+```
+
+---
+
+## Project Structure Overview
+
+```
+src/
+├── admin/          # Admin dashboard, stats, user roles, analytics, health checks
+├── auth/           # JWT authentication, signup, login, refresh, logout
+├── chat/           # Conversational AI logic, provider adapters (OpenAI, Claude, Gemini)
+├── common/         # Guards (JwtAuth, Roles), Decorators (@Roles, @CurrentUser), CryptoService
+├── prisma/         # Prisma client module and service
+├── providers/      # AI Provider CRUD operations & API key encryption
+├── search/         # Web search provider adapter, query caching, history
+├── subscriptions/  # Subscription status, plan upgrades, downgrades
+├── usage/          # Daily usage limit enforcement & ApiUsageLog tracking
+└── users/          # Profile retrieval and password updates
+```

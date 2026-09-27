@@ -94,7 +94,8 @@ The database seed populates initial role definitions (`USER`, `ADMIN`), plan tie
 | Email | Password | Role | Purpose |
 | :--- | :--- | :--- | :--- |
 | `admin@echogpt.com` | `Admin123!` | `ADMIN` | Full access to `/admin/*` management endpoints |
-| `user@echogpt.com` | `User123!` | `USER` | Standard user testing |
+
+> Regular user accounts are not pre-seeded. Create one via `POST /api/v1/auth/register`.
 
 > [!CAUTION]
 > Default seeded credentials are provided solely for development and evaluation. They must be updated or removed before deploying to production environments.

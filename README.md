@@ -163,7 +163,7 @@ src/
 ├── common/         # Guards (JwtAuth, Roles), Decorators (@Roles, @CurrentUser), CryptoService
 ├── prisma/         # Prisma client module and service
 ├── providers/      # AI Provider CRUD operations & API key encryption
-├── search/         # Web search provider adapter, query caching, history
+├── search/         # Web search provider adapter, caching & history (POST /search, GET /search/history, GET /search/recent, GET /search/suggestions)
 ├── subscriptions/  # Subscription status, plan upgrades, downgrades
 ├── usage/          # Daily usage limit enforcement & ApiUsageLog tracking
 └── users/          # Profile retrieval and password updates

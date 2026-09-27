@@ -85,6 +85,8 @@ Interactive Swagger documentation is available once the server is running:
 
 All endpoints requiring authentication include `@ApiBearerAuth()` in Swagger and expect a valid Bearer token in the `Authorization` header.
 
+Per-provider health check available at `GET /providers/:id/health` (verifies API key validity against the provider's API).
+
 ---
 
 ## Default Seeded Accounts
